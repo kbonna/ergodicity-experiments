@@ -1,3 +1,4 @@
+import random
 import numpy as np
 from functools import total_ordering
 
@@ -105,12 +106,20 @@ class IsoelasticWealthChange:
     def __repr__(self):
         return self.__str__()
     
+#     def __call__(self, x, delta_t=1):
+#         return inverse_isoelastic_utility(
+#             isoelastic_utility(x, self.eta) + self.gamma * delta_t, 
+#             self.eta
+#         )
     def __call__(self, x, delta_t=1):
-        return inverse_isoelastic_utility(
-            isoelastic_utility(x, self.eta) + self.gamma * delta_t, 
-            self.eta
-        )
-    
+        try:
+            return inverse_isoelastic_utility(
+                isoelastic_utility(x, self.eta) + self.gamma * delta_t, 
+                self.eta
+            )
+        except IsoelasticBoundError:
+            return 0
+        
     def __eq__(self, other):
         return self.gamma == other.gamma and self.eta == other.eta
     
@@ -206,6 +215,10 @@ class Gamble:
     @property
     def gamma_avg(self):
         return self._gamma_avg
+    
+    @property
+    def max_gamma(self):
+        return np.max((self.wc1.gamma, self.wc2.gamma))
     
     @property 
     def p(self):
@@ -382,6 +395,23 @@ class GamblePair:
     def __repr__(self):
         return self.__str__()
         
+class Experiment:
+    
+    def __init__(self, trials):
+        if not all(isinstance(item, GamblePair) for item in trials):
+            raise TypeError("all trials should be instances of GamblePair")
+        self._trials = trials
+        
+    @property
+    def trials(self):
+        return self._trials
+        
+    def shuffle_trials(self):
+        random.shuffle(self._trials)
+        
+    def __len__(self):
+        return len(self.trials)
+        
 class IsoelasticAgent:
     """Represent an agent using isoelastic utility function to make choices.
     
@@ -400,8 +430,6 @@ class IsoelasticAgent:
             Wealth that was used to create an agent instance.
         current_utility (float):
             Utility value for current wealth.
-        
-    
     """
     
     def __init__(self, eta, wealth=0):
@@ -508,12 +536,13 @@ class IsoelasticAgent:
         Returns:
             Chosen gamble instance.
         """
-        g1_edu = self.gamble_edu(g1)
-        g2_edu = self.gamble_edu(g2)
-        if g1_edu >= g2_edu:
+        if self.gamble_difference(g1, g2) >= 0:
             return g1
-        else: 
+        else:
             return g2
+        
+    def stochastic_choice(self, g1, g2):
+        pass
         
     def apply_gamble(self, g):
         """Use gamble to evolve wealth in a single time step.
@@ -527,6 +556,18 @@ class IsoelasticAgent:
         """
         self._wealth = g(self._wealth)
         
+    def run_experiment(self, experiment):
+        x = np.zeros(len(experiment) + 1)
+        x[0] = self.wealth
+        for t, trial in enumerate(experiment.trials):
+            try:
+                g = self.deterministic_choice(trial.g1, trial.g2)
+                self.apply_gamble(g)
+                x[t + 1] = self.wealth
+            except IsoelasticBoundError:
+                x[t + 1] = 0
+        return x
+    
     def __str__(self):
         return f"IsoelasticAgent(eta={self.eta}, wealth={self.wealth})" 
     
