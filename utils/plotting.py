@@ -108,3 +108,21 @@ def aligned_imshow_cbar(ax, im):
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     return cax
+
+def plot_wealth_trajectories(x):
+    """..."""
+    fig, ax = plt.subplots(ncols=2, gridspec_kw={'width_ratios': [4, 1]})
+
+    ax[0].plot(x, c="k", alpha=0.025);
+    ax[0].plot(np.mean(x, axis=1), c="r", alpha=0.5, lw=3);
+    ax[0].set_xlim([0, len(x) - 1])
+    ax[0].set_xlabel("Trial")
+    ax[0].set_ylabel("Wealth [DKK]")
+
+    ax[1].hist(x[-1], bins=30, orientation="horizontal", color="k", alpha=0.25)
+    ax[1].axhline(np.mean(x[-1]), c="r", alpha=0.5, lw=3)
+    ax[1].set_xlabel("counts")
+    ax[1].set_ylim(ax[0].get_ylim())
+    ax[1].set_yticks([])
+
+    plt.tight_layout()
