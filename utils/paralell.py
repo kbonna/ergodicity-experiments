@@ -138,7 +138,7 @@ def create_trial_order(n_simulations, n_gamble_pairs, n_trials):
         gamble pairs.
     """
     # indicates how many times gamble pairs should be repeated to span n_trials
-    repetition_factor = math.ceil(n_trials / n_gp)
+    repetition_factor = math.ceil(n_trials / n_gamble_pairs)
 
     basic_order = np.arange(n_gamble_pairs)[:, np.newaxis]
     trial_order = np.repeat(basic_order, n_simulations, axis=1)
@@ -207,8 +207,8 @@ def create_dmag_thrs(c, n_fractals):
         Array of bound values. First value corresponds to lower bound, last to
         upper bound. Number of levels is 2 * n_fractals.
     """
-    half_step = c * np.sqrt(2) / (2*n_fractals - 2)
-    return np.linspace(-half_step, 2*c*np.sqrt(2)+half_step, 2*n_fractals)
+    half_step = c / (2*n_fractals - 2)
+    return np.linspace(-half_step, 2*c+half_step, 2*n_fractals-1)[1:]
 
 def is_mixed(gp):
     """Decision if a gamble pair is composed of two mixed gambles."""
@@ -258,6 +258,18 @@ def is_g_mixed(g):
         Boolean decision value.
     """
     return np.any(g < 0) and np.any(g > 0)
+
+def is_g_deterministic(g):
+    """Decision if gamble is deterministic, i.e., composed of two same fractals.
+    
+    Args:
+        g (np.array):
+            Gamble array of shape (2, 0).
+
+    Returns:
+        Boolean decision value.
+    """
+    return g[0] == g[1]
 
 def disagreement(p1, p2):
     """Disagreement between agents.
