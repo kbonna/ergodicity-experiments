@@ -1,4 +1,4 @@
-This directiory contains core functions and helpers for generating ergodicity experiment simulatins. 
+This directiory contains core functions and helpers for generating ergodicity experiment simulations. 
 
 Modules:
 - `models`: object-oriented code for simulations
