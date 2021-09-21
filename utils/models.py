@@ -573,3 +573,45 @@ class IsoelasticAgent:
     
     def __repr__(self):
         return self.__str__()
+
+    
+def find_indifference_eta(g1, g2, x, eta_l=-10, eta_r=10, precision=1e-7):
+    """Estimate indifference eta given a pair of gambles.
+    
+    Eta indifference is the risk attitude/aversion value for which an agent is 
+    indifferent between choosing two gambles. Inspecting indifference eta allow
+    to visualize gamble space emphasisising choice discrepancies between agents.
+    
+    g1 (Gamble):
+        First gamble.
+    g2 (Gamble):
+        Second gamble.
+    x (float):
+        Agent's wealth.
+    eta_l (float):
+        Lower bound for eta indifference search.
+    eta_r (float):
+        Upper bound for eta indifference search.
+    precision (float):
+        Conversion precision criterion. 
+    """
+    eta_range = [eta_l, eta_r]
+    while True:
+        l = IsoelasticAgent(eta_range[0], x).gamble_difference(g1, g2)
+        r = IsoelasticAgent(eta_range[1], x).gamble_difference(g1, g2)
+        eta_m = (eta_range[0] + eta_range[1]) / 2
+        
+        # both signs are the same, i.e., strict preference regardless of eta
+        if np.sign(l * r) == 1:
+            return np.sign(l) * np.inf
+
+        # we converged at the solution
+        if np.abs(eta_range[0] - eta_range[1]) < precision:
+            return eta_m      
+        
+        # improve range
+        m = IsoelasticAgent(eta_m, x).gamble_difference(g1, g2)
+        if np.sign(m) == np.sign(l):
+            eta_range[0] = eta_m
+        else:
+            eta_range[1] = eta_m
